@@ -1,0 +1,62 @@
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #c59d5f;
+}
+
+section {
+  padding: 40px 20px;
+  text-align: center;
+}
+
+.hero {
+  background: #222;
+  color: #c59d5f;
+}
+
+.btn {
+  display: inline-block;
+  margin-top: 15px;
+  padding: 1px 15px;
+  background: #c59d5f;
+  color: #222;
+  text-decoration: none;
+  border-radius: 5px;
+}
+
+.services {
+  background: green;
+}
+
+.service {
+  margin: 12px 12px;
+}
+
+.contact {
+  background: #222;
+  color: #c59d5f;
+}
+
+.services-list {
+  display: flex;
+  gap: 2px;
+  justify-content: space-between
+  flex-wrap: wrap;
+}
+
+.service {
+  background: #c59d5f;
+  padding: 20px;
+  border-radius: 8px;
+  max-width: 250px;
+}
+
+
+
+
+
+
+
+
+
+
