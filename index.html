@@ -1,57 +1,516 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-  <title>Bar de lujo: Caña o coño</title>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>VOID HARVEST</title>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: #000;
+            font-family: Arial, sans-serif;
+            touch-action: none;
+        }
+
+        canvas {
+            display: block;
+        }
+
+        #ui {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            color: #0ff;
+            font-size: 18px;
+            text-shadow: 0 0 8px #0ff;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        #startScreen {
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,20,0.95);
+
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+
+            color: #0ff;
+            z-index: 100;
+        }
+
+        button {
+            margin-top: 30px;
+            padding: 15px 40px;
+            font-size: 22px;
+
+            background: transparent;
+            color: #0ff;
+
+            border: 2px solid #0ff;
+            border-radius: 50px;
+
+            box-shadow: 0 0 15px #0ff;
+        }
+
+        button:active {
+            background: #0ff;
+            color: #000;
+        }
+    </style>
 </head>
 <body>
 
-  <section class="hero">
-    <h1>Bar ¿Caña o Coño?</h1>
-    <p>Cañas y coños</p>
-    <a href="#" class="btn"><h3>Reservar mesa</h3></a>
-  </section>
+<div id="ui">
+    PUNTOS: <span id="score">0</span>
+</div>
 
-  <<section class="services">
-  <h2>Qué ofrecemos</h2>
+<div id="startScreen">
+    <h1 style="margin:0; font-size:42px; letter-spacing:4px;">
+        VOID<br>HARVEST
+    </h1>
 
-  <div class="services-list">
-    <div class="service">
-      <h3>Tapas caseras</h3>
-      <p>Recetas tradicionales hechas al momento.</p>
-    </div>
+    <p style="margin:10px 0 0; opacity:0.8;">
+        Recolecta cristales • Evita las sombras
+    </p>
 
-    <div class="service">
-      <h3>Cañas y Cerveza fría</h3>
-      <p>Las mejores marcas siempre bien frías.</p>
-    </div>
+    <button onclick="startGame()">
+        INICIAR
+    </button>
+</div>
 
-    <div class="service">
-      <h3>Buen ambiente</h3>
-      <p>Música, fútbol y amigos.</p>
-    </div>
+<canvas id="canvas"></canvas>
 
-    <div class="service">
-      <h3>Puto el que lo lea</h3>
-      <p>evidentemente el programador que absuelto y es goat</p>
-    </div>
-  </div>
-</section>
+<script>
 
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const scoreEl = document.getElementById('score');
 
+let WIDTH, HEIGHT;
 
-    <div class="service">
-      <h3>Coños</h3>
-      <p>De todos los tamaños colores y sabores</p>
-    </div>
-  </section>
+let player = {
+    x: 0,
+    y: 0,
+    size: 10,
+    speed: 20
+};
 
-  <section class="contact">
-    <h2>Contacto</h2>
-    <p>📍 Calle Mayor 12</p>
-    <p>📞 600 123 456</p>
-    <p>🗿 Sambuka </p>
-  </section>
+let targetX = 0;
+let targetY = 0;
+
+let score = 0;
+let gameRunning = false;
+
+let crystals = [];
+let shadows = [];
+let particles = [];
+
+let specialTimer = 0;
+
+function resize() {
+
+    WIDTH = window.innerWidth;
+    HEIGHT = window.innerHeight;
+
+    canvas.width = WIDTH;
+    canvas.height = HEIGHT;
+
+    if (player.x === 0) {
+
+        player.x = WIDTH / 2;
+        player.y = HEIGHT / 2;
+
+        targetX = player.x;
+        targetY = player.y;
+    }
+}
+
+class Crystal {
+
+    constructor(special = false) {
+
+        this.x = Math.random() * WIDTH;
+        this.y = Math.random() * HEIGHT;
+
+        this.special = special;
+
+        this.size = special ? 12 : 16;
+
+        this.color = special ? '#ff0' : '#0f8';
+
+        this.vx = (Math.random() - 0.5) * 1;
+        this.vy = (Math.random() - 0.5) * 1;
+    }
+
+    update() {
+
+        this.x += this.vx;
+        this.y += this.vy;
+
+        if (this.x < 0 || this.x > WIDTH) this.vx *= -1;
+        if (this.y < 0 || this.y > HEIGHT) this.vy *= -1;
+    }
+}
+
+class Shadow {
+
+    constructor() {
+
+        // Elegir borde aleatorio
+        const side = Math.floor(Math.random() * 4);
+
+        this.size = 22;
+        this.speed = 0.6 + Math.random() * 0.3;
+
+        // SPAWN EN BORDES
+        switch(side) {
+
+            // Arriba
+            case 0:
+                this.x = Math.random() * WIDTH;
+                this.y = -this.size;
+                break;
+
+            // Derecha
+            case 1:
+                this.x = WIDTH + this.size;
+                this.y = Math.random() * HEIGHT;
+                break;
+
+            // Abajo
+            case 2:
+                this.x = Math.random() * WIDTH;
+                this.y = HEIGHT + this.size;
+                break;
+
+            // Izquierda
+            case 3:
+                this.x = -this.size;
+                this.y = Math.random() * HEIGHT;
+                break;
+        }
+    }
+
+    update() {
+
+        const dx = player.x - this.x;
+        const dy = player.y - this.y;
+
+        const dist = Math.sqrt(dx * dx + dy * dy) || 10;
+
+        this.x += (dx / dist) * this.speed;
+        this.y += (dy / dist) * this.speed;
+    }
+}
+
+function createParticle(x, y, color) {
+
+    for (let i = 0; i < 120; i++) {
+
+        particles.push({
+            x,
+            y,
+
+            vx: (Math.random() - 2) * 6,
+            vy: (Math.random() - 2) * 6,
+
+            life: 28,
+            color
+        });
+    }
+}
+
+function drawBackground() {
+
+    ctx.fillStyle = '#050515';
+    ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+    ctx.fillStyle = 'rgba(255,255,255,0.6)';
+
+    for (let i = 0; i < 80; i++) {
+
+        const x = (i * 37) % WIDTH;
+        const y = (i * 23) % HEIGHT;
+
+        ctx.fillRect(x, y, 1.5, 1.5);
+    }
+}
+
+function drawPlayer() {
+
+    ctx.shadowBlur = 25;
+    ctx.shadowColor = '#0ff';
+
+    ctx.beginPath();
+    ctx.arc(player.x, player.y, player.size, 0, Math.PI * 2);
+
+    ctx.fillStyle = '#0ff';
+    ctx.fill();
+
+    ctx.shadowBlur = 8;
+
+    ctx.beginPath();
+    ctx.arc(player.x, player.y, player.size * 0.55, 0, Math.PI * 2);
+
+    ctx.fillStyle = '#fff';
+    ctx.fill();
+
+    ctx.shadowBlur = 0;
+}
+
+function drawCrystals() {
+
+    for (let c of crystals) {
+
+        ctx.shadowBlur = c.special ? 25: 15;
+        ctx.shadowColor = c.special ? '#ff0' : '#0f8';
+
+        ctx.fillStyle = c.color;
+
+        ctx.beginPath();
+        ctx.arc(c.x, c.y, c.size, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = 'rgba(255,255,255,0.9)';
+
+        ctx.beginPath();
+        ctx.arc(c.x - 4, c.y - 4, 4, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    ctx.shadowBlur = 0;
+}
+
+function drawShadows() {
+
+    ctx.shadowBlur = 20;
+    ctx.shadowColor = '#f33';
+
+    for (let s of shadows) {
+
+        ctx.fillStyle = '#f33';
+
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+
+        ctx.fill();
+    }
+
+    ctx.shadowBlur = 0;
+}
+
+function drawParticles() {
+
+    for (let i = particles.length - 1; i >= 0; i--) {
+
+        const p = particles[i];
+
+        ctx.globalAlpha = p.life / 28;
+
+        ctx.fillStyle = p.color;
+        ctx.fillRect(p.x, p.y, 5, 5);
+
+        p.x += p.vx;
+        p.y += p.vy;
+
+        p.life--;
+
+        p.vx *= 0.96;
+        p.vy *= 0.96;
+
+        if (p.life <= 0) {
+            particles.splice(i, 1);
+        }
+    }
+
+    ctx.globalAlpha = 1;
+}
+
+function checkCollisions() {
+
+    // CRISTALES
+    for (let i = crystals.length - 1; i >= 0; i--) {
+
+        const c = crystals[i];
+
+        const dx = player.x - c.x;
+        const dy = player.y - c.y;
+
+        if (dx * dx + dy * dy < (player.size + c.size) ** 2) {
+
+            // CRISTAL ESPECIAL
+            if (c.special) {
+
+                createParticle(c.x, c.y, '#ff0');
+
+                for (let s of shadows) {
+                    createParticle(s.x, s.y, '#f33');
+                }
+
+                shadows = [];
+
+                score += 50;
+
+            } else {
+
+                createParticle(c.x, c.y, '#0f8');
+
+                score += 10;
+            }
+
+            scoreEl.textContent = score;
+
+            crystals.splice(i, 1);
+        }
+    }
+
+    // SOMBRAS
+    for (let s of shadows) {
+
+        const dx = player.x - s.x;
+        const dy = player.y - s.y;
+
+        if (dx * dx + dy * dy < (player.size + s.size) ** 2) {
+
+            gameOver();
+            return;
+        }
+    }
+}
+
+function spawnEntities() {
+
+    // Cristales normales
+    if (Math.random() < 0.0045) {
+        crystals.push(new Crystal());
+    }
+
+    // Cristal especial amarillo
+    specialTimer++;
+
+    if (specialTimer > 600) {
+
+        specialTimer = 0;
+
+        crystals.push(new Crystal(true));
+    }
+
+    // Sombras
+    if (Math.random() < 0.008 + score / 12000) {
+        shadows.push(new Shadow());
+    }
+}
+
+function gameLoop() {
+
+    if (!gameRunning) return;
+
+    drawBackground();
+
+    const dx = targetX - player.x;
+    const dy = targetY - player.y;
+
+    const dist = Math.sqrt(dx * dx + dy * dy);
+
+    if (dist > 8) {
+
+        player.x += (dx / dist) * player.speed;
+        player.y += (dy / dist) * player.speed;
+    }
+
+    player.x = Math.max(player.size, Math.min(WIDTH - player.size, player.x));
+    player.y = Math.max(player.size, Math.min(HEIGHT - player.size, player.y));
+
+    for (let c of crystals) c.update();
+    for (let s of shadows) s.update();
+
+    spawnEntities();
+    checkCollisions();
+
+    drawCrystals();
+    drawShadows();
+    drawPlayer();
+    drawParticles();
+
+    requestAnimationFrame(gameLoop);
+}
+
+function gameOver() {
+
+    gameRunning = false;
+
+    alert(
+        `¡Game Over!\nPuntos finales: ${score}\n\nToca "OK" para volver a jugar`
+    );
+
+    document.getElementById('startScreen').style.display = 'flex';
+}
+
+function startGame() {
+
+    document.getElementById('startScreen').style.display = 'none';
+
+    score = 0;
+    scoreEl.textContent = '0';
+
+    crystals = [];
+    shadows = [];
+    particles = [];
+
+    player.x = WIDTH / 2;
+    player.y = HEIGHT / 2;
+
+    targetX = player.x;
+    targetY = player.y;
+
+    specialTimer = 0;
+
+    gameRunning = true;
+
+    gameLoop();
+}
+
+// CONTROLES TÁCTILES
+function handleTouch(e) {
+
+    if (!gameRunning) return;
+
+    e.preventDefault();
+
+    const touch = e.touches[0];
+
+    targetX = touch.clientX;
+    targetY = touch.clientY;
+}
+
+canvas.addEventListener('touchstart', handleTouch);
+canvas.addEventListener('touchmove', handleTouch);
+
+// RATÓN
+canvas.addEventListener('mousemove', (e) => {
+
+    if (!gameRunning) return;
+
+    targetX = e.clientX;
+    targetY = e.clientY;
+});
+
+window.addEventListener('resize', resize);
+
+resize();
+
+console.log(
+    '%cVOID HARVEST - Cristal especial amarillo añadido ✨',
+    'color:#ff0; font-family:monospace'
+);
+
+</script>
 
 </body>
 </html>
